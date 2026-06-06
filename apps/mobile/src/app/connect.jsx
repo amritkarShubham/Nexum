@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
-import { Heart, Link2, QrCode, ArrowLeft, Share2 } from 'lucide-react-native';
+import { Heart, Link2, QrCode, ArrowLeft, Share2, Clock } from 'lucide-react-native';
 import { useAuthStore } from '../utils/auth/store';
 import { router } from 'expo-router';
 import { api } from '../utils/api';
@@ -10,6 +10,7 @@ export default function ConnectScreen() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [createdCode, setCreatedCode] = useState(null);
+  const [joined, setJoined] = useState(false);
   const { auth, setAuth } = useAuthStore();
 
   const handleCreate = async () => {
@@ -31,17 +32,26 @@ export default function ConnectScreen() {
     try {
       const couple = await api.joinCouple(code.trim().toUpperCase(), auth.user.id);
       setAuth({ ...auth, coupleId: couple.id, coupleCode: couple.code });
-      router.replace('/dashboard');
+      setJoined(true);
+      setTimeout(() => router.replace('/dashboard'), 1500);
     } catch (e) {
-      Alert.alert('Error', e.message || 'Invalid or expired code');
+      Alert.alert('Invalid Code', 'Double-check the code with your partner');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleContinue = () => {
-    router.replace('/dashboard');
-  };
+  if (joined) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={{ padding: 24, flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Heart size={48} color="#34d399" />
+          <Text style={{ color: '#f0f0ff', fontSize: 24, fontWeight: '700', marginTop: 16 }}>Connected!</Text>
+          <Text style={{ color: '#5a5a7a', fontSize: 15, marginTop: 8 }}>You're now connected with your partner</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (createdCode) {
     return (
@@ -58,9 +68,10 @@ export default function ConnectScreen() {
               <Share2 size={16} color="#0a0a0f" />
               <Text style={styles.shareBtnText}>Share Code</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.doneBtn} onPress={handleContinue}>
-              <Text style={styles.doneBtnText}>Go to Dashboard</Text>
-            </TouchableOpacity>
+            <View style={styles.waitingCard}>
+              <Clock size={16} color="#f59e0b" />
+              <Text style={styles.waitingText}>Waiting for your partner to join...</Text>
+            </View>
           </View>
         </View>
       </SafeAreaView>
@@ -157,6 +168,6 @@ const styles = StyleSheet.create({
   codeText: { color: '#f0f0ff', fontSize: 24, fontWeight: '700', letterSpacing: 6 },
   shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#6c63ff', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, marginTop: 8 },
   shareBtnText: { color: '#0a0a0f', fontSize: 14, fontWeight: '600' },
-  doneBtn: { marginTop: 12, padding: 12 },
-  doneBtnText: { color: '#6c63ff', fontSize: 14, fontWeight: '500' },
+  waitingCard: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, padding: 12, borderRadius: 12, backgroundColor: 'rgba(245,158,11,0.1)' },
+  waitingText: { color: '#f59e0b', fontSize: 13, fontWeight: '500' },
 });

@@ -75,9 +75,6 @@ export default function OnboardingScreen() {
               )}
             </TouchableOpacity>
           ))}
-          <TouchableOpacity style={{ padding: 16, alignItems: 'center' }} onPress={() => router.push('/connect')}>
-            <Text style={{ color: '#5a5a7a', fontSize: 14 }}>I'll choose later</Text>
-          </TouchableOpacity>
         </ScrollView>
       </SafeAreaView>
     );

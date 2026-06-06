@@ -5,7 +5,12 @@ async function request(path, options = {}) {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
-  const data = await res.json();
+  let data;
+  try {
+    data = await res.json();
+  } catch {
+    throw new Error('Server error - please try again');
+  }
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }

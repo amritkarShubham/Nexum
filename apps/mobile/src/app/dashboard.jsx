@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Heart, MessageSquare, Play, Gamepad2, Video, Phone, Send, Sparkles, Crown, Sun, ChevronRight } from 'lucide-react-native';
+import { Heart, MessageSquare, Play, Gamepad2, Video, Phone, Send, Sparkles, Crown } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useAuthStore } from '../utils/auth/store';
 import useStore, { PLANS } from '../store/useStore';
 
 const ACTIONS = [
@@ -26,7 +27,14 @@ const RECENT = [
 
 export default function Dashboard() {
   const insets = useSafeAreaInsets();
+  const { auth } = useAuthStore();
   const { partner, partnerOnline, currentMood, setCurrentMood, streak, daysSinceStart, plan, setPlan, showUpgradeBanner, setShowUpgradeBanner, user } = useStore();
+
+  useEffect(() => {
+    if (!auth || !auth.coupleId) {
+      router.replace('/connect');
+    }
+  }, [auth]);
   const [mood, setMood] = useState(currentMood);
   const currentPlan = PLANS[plan];
   const upgrade = plan === 'spark' ? { target: 'embrace', label: 'Upgrade to Embrace', desc: 'Unlock unlimited everything' } :
