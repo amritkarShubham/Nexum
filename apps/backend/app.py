@@ -4,21 +4,114 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 
+from database import (
+    create_user, get_user_by_email, get_user,
+    create_couple, join_couple, get_couple_by_user,
+    get_subscription, upsert_subscription,
+    check_usage_limit, increment_daily_usage,
+)
+
 load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'nexum_super_secret_key')
-CORS(app, resources={r"/*": {"origins": "*"}})
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex())
+CORS(app, resources={r"/*": {"origins": os.environ.get("CORS_ORIGIN", "http://localhost:5173")}})
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins=os.environ.get("CORS_ORIGIN", "*"))
+
+# ── REST API ──
 
 @app.route('/health')
 def health_check():
     return jsonify({"status": "ok", "message": "Nexum API is running"})
 
-# -----------------
-# WebSocket Events
-# -----------------
+# Auth / Users
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    if not data or not data.get('email') or not data.get('name'):
+        return jsonify({"error": "email and name required"}), 400
+    existing = get_user_by_email(data['email'])
+    if existing:
+        return jsonify({"error": "user already exists"}), 409
+    user = create_user(data['email'], data['name'], data.get('avatar', ''))
+    sub = upsert_subscription(user['id'], data.get('plan', 'spark'))
+    return jsonify({"user": user, "subscription": sub}), 201
+
+@app.route('/api/users/<user_id>')
+def get_user_route(user_id):
+    user = get_user(user_id)
+    if not user:
+        return jsonify({"error": "not found"}), 404
+    sub = get_subscription(user_id)
+    return jsonify({"user": user, "subscription": sub})
+
+# Couples
+@app.route('/api/couples', methods=['POST'])
+def create_couple_route():
+    data = request.get_json()
+    if not data or not data.get('user_id'):
+        return jsonify({"error": "user_id required"}), 400
+    couple = create_couple(data['user_id'])
+    return jsonify(couple), 201
+
+@app.route('/api/couples/join', methods=['POST'])
+def join_couple_route():
+    data = request.get_json()
+    if not data or not data.get('code') or not data.get('user_id'):
+        return jsonify({"error": "code and user_id required"}), 400
+    couple = join_couple(data['code'], data['user_id'])
+    if not couple:
+        return jsonify({"error": "invalid or expired code"}), 404
+    return jsonify(couple)
+
+@app.route('/api/couples/<user_id>')
+def get_couple_route(user_id):
+    couple = get_couple_by_user(user_id)
+    if not couple:
+        return jsonify({"error": "no couple found"}), 404
+    return jsonify(couple)
+
+# Subscriptions
+@app.route('/api/subscription/<user_id>', methods=['GET'])
+def get_subscription_route(user_id):
+    sub = get_subscription(user_id)
+    if not sub:
+        return jsonify({"plan": "spark"}), 200
+    return jsonify(sub)
+
+@app.route('/api/subscription/upgrade', methods=['POST'])
+def upgrade_subscription():
+    data = request.get_json()
+    if not data or not data.get('user_id') or not data.get('plan'):
+        return jsonify({"error": "user_id and plan required"}), 400
+    if data['plan'] not in ('spark', 'embrace', 'eclipse'):
+        return jsonify({"error": "invalid plan"}), 400
+    sub = upsert_subscription(
+        data['user_id'], data['plan'],
+        data.get('stripe_customer_id'),
+        data.get('stripe_subscription_id'),
+    )
+    return jsonify(sub)
+
+# Usage tracking
+@app.route('/api/usage/check', methods=['POST'])
+def check_usage():
+    data = request.get_json()
+    if not data or not data.get('user_id') or not data.get('action'):
+        return jsonify({"error": "user_id and action required"}), 400
+    allowed = check_usage_limit(data['user_id'], data['action'])
+    return jsonify({"allowed": allowed})
+
+@app.route('/api/usage/track', methods=['POST'])
+def track_usage():
+    data = request.get_json()
+    if not data or not data.get('user_id') or not data.get('field'):
+        return jsonify({"error": "user_id and field required"}), 400
+    usage = increment_daily_usage(data['user_id'], data['field'], data.get('amount', 1))
+    return jsonify(usage)
+
+# ── WebSocket Events ──
 
 @socketio.on('connect')
 def handle_connect():
@@ -35,7 +128,7 @@ def on_join(data):
     if room:
         join_room(room)
         print(f"User {request.sid} joined room {room}")
-        emit('room_update', {'message': f"A user joined room {room}"}, to=room)
+        emit('room_update', {'message': f"User joined room {room}"}, to=room)
 
 # WebRTC Signaling
 @socketio.on('webrtc_offer')
@@ -56,10 +149,22 @@ def handle_ice_candidate(data):
 # Streaming Sync
 @socketio.on('player_action')
 def handle_player_action(data):
-    # data: {room: str, action: "play" | "pause" | "seek", time?: float}
     room = data.get('room')
-    print(f"Player action in {room}: {data}")
     emit('player_sync', data, to=room, include_self=False)
 
+# Chat
+@socketio.on('chat_message')
+def handle_chat(data):
+    room = data.get('room')
+    emit('chat_message', data, to=room, include_self=False)
+
+# Mood
+@socketio.on('mood_update')
+def handle_mood(data):
+    room = data.get('room')
+    emit('mood_sync', data, to=room, include_self=False)
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    debug = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    socketio.run(app, debug=debug, port=port, host='0.0.0.0', allow_unsafe_werkzeug=debug)

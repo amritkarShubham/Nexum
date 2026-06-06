@@ -13,7 +13,7 @@ export const SocketProvider = ({ children }) => {
 
   useEffect(() => {
     // In production, this should be the actual backend URL
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io('https://acid-cradle-grain.ngrok-free.dev', {
       transports: ['websocket'],
     });
 
