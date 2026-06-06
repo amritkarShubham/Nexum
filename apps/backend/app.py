@@ -46,6 +46,14 @@ def get_user_route(user_id):
     sub = get_subscription(user_id)
     return jsonify({"user": user, "subscription": sub})
 
+@app.route('/api/users/by-email/<email>')
+def get_user_by_email_route(email):
+    user = get_user_by_email(email)
+    if not user:
+        return jsonify({"error": "not found"}), 404
+    sub = get_subscription(user['id'])
+    return jsonify({"user": user, "subscription": sub})
+
 # Couples
 @app.route('/api/couples', methods=['POST'])
 def create_couple_route():
