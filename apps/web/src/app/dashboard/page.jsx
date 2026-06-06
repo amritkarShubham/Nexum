@@ -21,7 +21,7 @@ const MOODS = [
 ];
 
 const RECENT = [
-  { emoji: '🌅', text: 'Sarah shared a sunset photo', time: '2:30 PM' },
+  { emoji: '🌅', text: 'Your partner shared a sunset photo', time: '2:30 PM' },
   { emoji: '🎵', text: 'You both listened to Golden Hour — JVKE', time: '1:15 PM' },
   { emoji: '🎤', text: 'You sent a voice message', time: '11:00 AM' },
   { emoji: '💬', text: '"Good morning sunshine ☀️"', time: '9:20 AM' },
@@ -36,7 +36,7 @@ const PLAN_UPGRADES = {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { connected } = useSocket();
-  const { partner, partnerOnline, currentMood, setCurrentMood, streak, daysSinceStart, plan, setPlan, showUpgradeBanner, setShowUpgradeBanner } = useStore();
+  const { user, partner, partnerOnline, currentMood, setCurrentMood, streak, daysSinceStart, plan, setPlan, showUpgradeBanner, setShowUpgradeBanner } = useStore();
   const [mood, setMood] = useState(currentMood);
   const currentPlan = PLANS[plan];
   const upgrade = PLAN_UPGRADES[plan];
@@ -47,7 +47,7 @@ export default function Dashboard() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 600, marginBottom: 2 }}>
-            Hey, Alex
+            Hey, {user?.name || 'You'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
@@ -94,7 +94,7 @@ export default function Dashboard() {
       {/* Partner card */}
       <div className="card card-accent" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', marginBottom: 28 }}>
         <div className="avatar-wrapper">
-          <img src={partner.avatar} alt="" className="avatar avatar-md" />
+          <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236c63ff"/><text x="16" y="21" text-anchor="middle" fill="white" font-size="14">P</text></svg>'} alt="" className="avatar avatar-md" />
           <span className={`avatar-dot ${partnerOnline ? 'online' : 'offline'}`} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -161,7 +161,7 @@ export default function Dashboard() {
           <Send size={13} /> Write your answer
         </button>
         <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 12 }}>
-          Sarah answered 2h ago
+          {partner?.name || 'Partner'} answered 2h ago
         </div>
       </div>
 

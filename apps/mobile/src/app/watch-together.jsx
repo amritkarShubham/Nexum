@@ -31,12 +31,24 @@ export default function WatchTogetherScreen() {
   const [url, setUrl] = useState('');
   const [showReactions, setShowReactions] = useState(false);
   const [floatingEmojis, setFloatingEmojis] = useState([]);
+  const manualTimerRef = useRef(null);
 
   const addReaction = (emoji) => {
     const id = Date.now();
     setFloatingEmojis(prev => [...prev, { id, emoji }]);
     setTimeout(() => setFloatingEmojis(prev => prev.filter(e => e.id !== id)), 2000);
   };
+
+  useEffect(() => {
+    if (isManualMode && isPlaying) {
+      manualTimerRef.current = setInterval(() => {
+        setManualTime(t => t + 1);
+      }, 1000);
+    } else {
+      if (manualTimerRef.current) clearInterval(manualTimerRef.current);
+    }
+    return () => { if (manualTimerRef.current) clearInterval(manualTimerRef.current); };
+  }, [isManualMode, isPlaying]);
 
   const selectPlatform = (p) => {
     setPlatform(p);
@@ -115,15 +127,7 @@ export default function WatchTogetherScreen() {
                 <Text style={{ color: '#fff', fontSize: 9 }}>10s</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.playBtn} onPress={() => {
-                if (isPlaying) {
-                  setIsPlaying(false);
-                } else {
-                  setIsPlaying(true);
-                  const interval = setInterval(() => {
-                    setManualTime(t => t + 1);
-                  }, 1000);
-                  return () => clearInterval(interval);
-                }
+                setIsPlaying(!isPlaying);
               }}>
                 {isPlaying ? <Pause size={24} color="#0a0a0f" /> : <Play size={24} color="#0a0a0f" />}
               </TouchableOpacity>

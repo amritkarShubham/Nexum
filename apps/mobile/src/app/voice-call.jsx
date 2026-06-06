@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react-native';
+import useStore from '../store/useStore';
 
 export default function VoiceCallScreen() {
+  const { partner } = useStore();
   const [muted, setMuted] = useState(false);
   const [duration, setDuration] = useState(0);
   const [speakerOn, setSpeakerOn] = useState(false);
@@ -23,9 +25,9 @@ export default function VoiceCallScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>S</Text>
+          <Text style={styles.avatarText}>{partner.name?.[0] || 'P'}</Text>
         </View>
-        <Text style={styles.partnerName}>Sarah</Text>
+        <Text style={styles.partnerName}>{partner.name}</Text>
         <Text style={styles.callLabel}>Voice call</Text>
         <Text style={styles.duration}>{formatTime(duration)}</Text>
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { Heart, LogIn, UserPlus, Sparkles, Play, Gamepad2, MessageCircle } from 'lucide-react-native';
 import { useAuthStore } from '../utils/auth/store';
+import useStore from '../store/useStore';
 import { router } from 'expo-router';
 import { api } from '../utils/api';
 
@@ -27,12 +28,14 @@ export default function LandingScreen() {
     setLoading(true);
     try {
       if (mode === 'register') {
-        const data = await api.register(email.trim(), name.trim());
+        const data = await api.register(email.trim(), name.trim(), '');
         setAuth({ user: data.user, subscription: data.subscription });
+        useStore.getState().setUser(data.user);
         router.replace('/connect');
       } else {
         const data = await api.getUserByEmail(email.trim());
         setAuth({ user: data.user, subscription: data.subscription });
+        useStore.getState().setUser(data.user);
         try {
           const couple = await api.getCouple(data.user.id);
           setAuth({ user: data.user, subscription: data.subscription, coupleId: couple.id });

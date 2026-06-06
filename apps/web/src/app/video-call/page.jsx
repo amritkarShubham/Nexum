@@ -33,7 +33,7 @@ export default function VideoCall() {
           {callState !== 'connected' && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0008' }}>
               <div style={{ textAlign: 'center' }}>
-                <img src={partner.avatar} alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px', opacity: 0.6 }} />
+                <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="32" fill="%236c63ff"/><text x="32" y="42" text-anchor="middle" fill="white" font-size="28">P</text></svg>'} alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', margin: '0 auto 12px', opacity: 0.6 }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--amber)', animation: 'pulse 1.5s ease-in-out infinite' }} />
                   Waiting for {partner.name}

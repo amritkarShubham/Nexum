@@ -48,7 +48,7 @@ export default function VoiceCall() {
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 24px' }}>
         <div className="avatar-wrapper" style={{ marginBottom: 20 }}>
-          <img src={partner.avatar} alt="" className="avatar" style={{ width: 80, height: 80 }} />
+          <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><circle cx="40" cy="40" r="40" fill="%236c63ff"/><text x="40" y="52" text-anchor="middle" fill="white" font-size="36">P</text></svg>'} alt="" className="avatar" style={{ width: 80, height: 80 }} />
           {callState === 'connected' && <span className="avatar-dot online" style={{ width: 14, height: 14 }} />}
         </div>
         <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, fontWeight: 500, marginBottom: 4 }}>{partner.name}</div>

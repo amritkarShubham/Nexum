@@ -20,7 +20,7 @@ const MOODS = [
 ];
 
 const RECENT = [
-  { emoji: '🌅', text: 'Sarah shared a sunset photo', time: '2:30 PM' },
+  { emoji: '🌅', text: 'Your partner shared a sunset photo', time: '2:30 PM' },
   { emoji: '🎵', text: 'You both listened to Golden Hour — JVKE', time: '1:15 PM' },
   { emoji: '💬', text: '"Good morning sunshine ☀️"', time: '9:20 AM' },
 ];
@@ -145,7 +145,7 @@ export default function Dashboard() {
             <Send size={13} color="#f0f0ff" />
             <Text style={styles.promptBtnText}>Write your answer</Text>
           </TouchableOpacity>
-          <Text style={styles.promptMeta}>Sarah answered 2h ago</Text>
+                  <Text style={styles.promptMeta}>{partner.name || 'Partner'} answered 2h ago</Text>
         </View>
 
         {/* Stats */}

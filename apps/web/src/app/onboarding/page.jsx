@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowRight, Check } from 'lucide-react';
 import useStore, { PLANS } from '../../store/useStore';
@@ -24,20 +24,91 @@ const STEPS = [
 
 const PLAN_IDS = ['spark', 'embrace', 'eclipse'];
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 export default function Onboarding() {
   const navigate = useNavigate();
   const { plan, setPlan } = useStore();
   const [step, setStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState(plan);
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [userId, setUserId] = useState(null);
+  const [coupleCode, setCoupleCode] = useState('');
+  const [joinCode, setJoinCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const isPlanStep = step === STEPS.length;
   const isConnectStep = step === STEPS.length + 1;
   const totalSteps = STEPS.length + 2;
   const s = STEPS[step];
 
+  useEffect(() => {
+    if (step === STEPS.length && !userId) {
+      registerUser();
+    }
+  }, [step]);
+
+  const registerUser = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch(`${BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email || 'user@nexum.app', name: name || 'You', plan: selectedPlan }),
+      });
+      if (!res.ok) throw new Error('Registration failed');
+      const data = await res.json();
+      setUserId(data.user?.id);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createCouple = async () => {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/couples`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      });
+      if (!res.ok) throw new Error('Failed to create couple');
+      const data = await res.json();
+      setCoupleCode(data.code);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const joinCouple = async () => {
+    if (!userId || !joinCode.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${BASE_URL}/api/couples/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: joinCode.trim().toUpperCase(), user_id: userId }),
+      });
+      if (!res.ok) throw new Error('Invalid code');
+      await res.json();
+      navigate('/dashboard');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleNext = () => {
     if (isPlanStep) {
       setPlan(selectedPlan);
-      setStep(s => s + 1);
     } else if (isConnectStep) {
       navigate('/dashboard');
     } else {
@@ -140,16 +211,25 @@ export default function Onboarding() {
             </p>
             <div className="card card-glow" style={{ padding: 20, marginBottom: 24 }}>
               <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 10, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Your couple code</div>
-              <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'monospace', textAlign: 'center', background: 'linear-gradient(135deg, var(--accent), var(--violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16, letterSpacing: '0.1em' }}>
-                NX-{Math.random().toString(36).substring(2, 6).toUpperCase()}
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: 16 }}>Share this with your partner</div>
-              <input className="input" type="text" placeholder="Enter partner's code" style={{ marginBottom: 10 }} />
-              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => navigate('/dashboard')}>Connect</button>
+              {coupleCode ? (
+                <>
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: 'monospace', textAlign: 'center', background: 'linear-gradient(135deg, var(--accent), var(--violet))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16, letterSpacing: '0.1em' }}>
+                    {coupleCode}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: 16 }}>Share this with your partner</div>
+                </>
+              ) : (
+                <button className="btn btn-primary" onClick={createCouple} disabled={loading} style={{ width: '100%', justifyContent: 'center', marginBottom: 16 }}>
+                  {loading ? 'Creating...' : 'Generate Couple Code'}
+                </button>
+              )}
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: 8 }}>— or —</div>
+              <input className="input" type="text" placeholder="Enter partner's code" value={joinCode} onChange={e => setJoinCode(e.target.value)} style={{ marginBottom: 10 }} />
+              <button className="btn btn-primary" onClick={joinCouple} disabled={loading || !joinCode.trim()} style={{ width: '100%', justifyContent: 'center' }}>
+                {loading ? 'Joining...' : 'Connect'}
+              </button>
+              {error && <div style={{ color: 'var(--accent)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>{error}</div>}
             </div>
-            <button className="btn btn-primary animate-glow" onClick={() => navigate('/dashboard')} style={{ width: '100%', justifyContent: 'center', padding: '12px 24px' }}>
-              Start with {PLANS[selectedPlan].name} <ArrowRight size={15} />
-            </button>
           </div>
         ) : (
           /* ── Feature Steps ── */

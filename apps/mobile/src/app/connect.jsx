@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator, Share } from 'react-native';
 import { Heart, Link2, QrCode, ArrowLeft, Share2, Clock } from 'lucide-react-native';
 import { useAuthStore } from '../utils/auth/store';
 import { router } from 'expo-router';
 import { api } from '../utils/api';
+import { useSocket } from '../context/SocketContext';
 
 export default function ConnectScreen() {
   const [mode, setMode] = useState(null);
@@ -12,6 +13,20 @@ export default function ConnectScreen() {
   const [createdCode, setCreatedCode] = useState(null);
   const [joined, setJoined] = useState(false);
   const { auth, setAuth } = useAuthStore();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket || !createdCode) return;
+    const handler = (data) => {
+      if (data.coupleCode === createdCode) {
+        setAuth({ ...auth, coupleId: data.coupleId });
+        setJoined(true);
+        setTimeout(() => router.replace('/dashboard'), 1500);
+      }
+    };
+    socket.on('partner_joined', handler);
+    return () => socket.off('partner_joined', handler);
+  }, [socket, createdCode]);
 
   const handleCreate = async () => {
     setLoading(true);

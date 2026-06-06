@@ -164,7 +164,11 @@ def get_daily_usage(user_id):
     conn.close()
     return usage
 
+VALID_FIELDS = {"games_played", "streaming_seconds", "call_seconds"}
+
 def increment_daily_usage(user_id, field, amount=1):
+    if field not in VALID_FIELDS:
+        raise ValueError(f"Invalid field: {field}")
     today = date.today()
     if USE_SUPABASE and supabase:
         existing = supabase.table("daily_usage").select("*").eq("user_id", user_id).eq("date", today.isoformat()).execute()

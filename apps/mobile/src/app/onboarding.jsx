@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Heart, Play, Gamepad2, Video, Sparkles, Check, ArrowRight } from 'lucide-react-native';
 import { router } from 'expo-router';
 import useStore, { PLANS } from '../store/useStore';
+import { useAuthStore } from '../utils/auth/store';
+import { api } from '../utils/api';
 
 const INTRO_SLIDES = [
   { icon: Play, title: 'Watch Together', desc: 'Stream YouTube & more in perfect sync', color: '#ec4899' },
@@ -14,7 +16,9 @@ const INTRO_SLIDES = [
 export default function OnboardingScreen() {
   const [step, setStep] = useState(0);
   const [selectedPlan, setSelectedPlan] = useState('spark');
-  const { setPlan } = useStore();
+  const [loading, setLoading] = useState(false);
+  const { setPlan, setUser } = useStore();
+  const { setAuth } = useAuthStore();
 
   // Step 0-3: Feature intro
   if (step < 4) {
@@ -69,8 +73,20 @@ export default function OnboardingScreen() {
                 </View>
               ))}
               {selectedPlan === p.id && (
-                <TouchableOpacity style={styles.continueBtn} onPress={() => { setPlan(p.id); router.push('/connect'); }}>
-                  <Text style={styles.continueBtnText}>{p.price === 'Free' ? 'Start Free' : `Start ${p.name}`}</Text>
+                <TouchableOpacity style={styles.continueBtn} onPress={async () => {
+                  setLoading(true);
+                  try {
+                    const data = await api.register(`user${Date.now()}@nexum.app`, 'You', '');
+                    setAuth({ user: data.user, subscription: data.subscription });
+                    setUser(data.user);
+                    setPlan(p.id);
+                    router.push('/connect');
+                  } catch (e) {
+                    Alert.alert('Error', e.message);
+                    setLoading(false);
+                  }
+                }} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.continueBtnText}>{p.price === 'Free' ? 'Start Free' : `Start ${p.name}`}</Text>}
                 </TouchableOpacity>
               )}
             </TouchableOpacity>

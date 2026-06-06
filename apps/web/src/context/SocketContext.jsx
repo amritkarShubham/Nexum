@@ -12,8 +12,8 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    // In production, this should be the actual backend URL
-    const newSocket = io('https://acid-cradle-grain.ngrok-free.dev', {
+    const url = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+    const newSocket = io(url, {
       transports: ['websocket'],
     });
 

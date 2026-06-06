@@ -65,7 +65,7 @@ export default function useVideoCall(roomId = 'test_couple_room') {
   const toggleMute = useCallback(() => {
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach(t => {
-        t.enabled = isMuted;
+        t.enabled = !isMuted;
       });
       setIsMuted(!isMuted);
     }
@@ -74,7 +74,7 @@ export default function useVideoCall(roomId = 'test_couple_room') {
   const toggleCamera = useCallback(() => {
     if (localStreamRef.current) {
       localStreamRef.current.getVideoTracks().forEach(t => {
-        t.enabled = isCameraOff;
+        t.enabled = !isCameraOff;
       });
       setIsCameraOff(!isCameraOff);
     }

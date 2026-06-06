@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 
 export const PLANS = {
-  spark: { id: 'spark', name: 'Spark', tagline: 'That first glow', icon: '✨', price: 'Free', color: '#f59e0b' },
-  embrace: { id: 'embrace', name: 'Embrace', tagline: 'Closer every day', icon: '💫', price: '₹499/mo', color: '#6c63ff' },
-  eclipse: { id: 'eclipse', name: 'Eclipse', tagline: 'Two souls, one orbit', icon: '🌑', price: '₹999/mo', color: '#ec4899' },
+  spark: { id: 'spark', name: 'Spark', tagline: 'That first glow', icon: '✨', price: 'Free', color: '#f59e0b', features: ['Unlimited chat', '1 game per day', 'Basic voice calls', 'YouTube watch together', 'Daily prompts'] },
+  embrace: { id: 'embrace', name: 'Embrace', tagline: 'Closer every day', icon: '💫', price: '₹499/mo', color: '#6c63ff', features: ['Unlimited chat', '3-4 games per day', 'HD voice & video calls', 'All platforms watch together', 'Daily prompts & mood tracking'] },
+  eclipse: { id: 'eclipse', name: 'Eclipse', tagline: 'Two souls, one orbit', icon: '🌑', price: '₹999/mo', color: '#ec4899', features: ['Everything in Embrace, unlimited', 'All games — unlimited plays', 'Unlimited streaming — all platforms', 'Priority support', 'Custom themes & chat colors'] },
 };
 
 const useStore = create((set, get) => ({
@@ -32,7 +32,7 @@ const useStore = create((set, get) => ({
   truthOrDareState: null,
   wyrState: null,
   streak: 47,
-  daysSinceStart: 365,
+  daysSinceStart: (() => Math.floor((Date.now() - new Date('2024-06-15').getTime()) / 86400000))(),
   messages: [
     { id: '1', text: "Hey! How's your day going?", sender: 'partner', time: '2:30 PM' },
     { id: '2', text: 'It was great! Miss you 🥰', sender: 'me', time: '2:31 PM' },

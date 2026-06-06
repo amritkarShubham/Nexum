@@ -1,22 +1,40 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { ArrowLeft, Send, Phone, Video, Heart } from 'lucide-react-native';
 import { router } from 'expo-router';
 import useStore from '../store/useStore';
+import { useSocket } from '../context/SocketContext';
 
 export default function ChatScreen() {
   const [input, setInput] = useState('');
   const flatListRef = useRef(null);
   const { messages, addMessage, partner, partnerOnline } = useStore();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      addMessage({
+        id: Date.now().toString(),
+        text: data.text,
+        sender: 'partner',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    };
+    socket.on('chat_message', handler);
+    return () => socket.off('chat_message', handler);
+  }, [socket]);
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    addMessage({
+    const msg = {
       id: Date.now().toString(),
       text: input.trim(),
       sender: 'me',
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    });
+    };
+    addMessage(msg);
+    if (socket) socket.emit('chat_message', { room: 'test_couple_room', text: input.trim() });
     setInput('');
   };
 

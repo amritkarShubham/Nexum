@@ -71,7 +71,7 @@ export default function useVoiceCall(roomId = 'test_couple_room') {
   const toggleMute = useCallback(() => {
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach(t => {
-        t.enabled = isMuted;
+        t.enabled = !isMuted;
       });
       setIsMuted(!isMuted);
     }

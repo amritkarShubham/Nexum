@@ -38,7 +38,7 @@ export default function Connect() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
         <button className="btn btn-ghost btn-icon" onClick={() => navigate('/dashboard')}><ArrowLeft size={18} /></button>
         <div className="avatar-wrapper">
-          <img src={partner.avatar} alt="" className="avatar avatar-sm" />
+          <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236c63ff"/><text x="16" y="21" text-anchor="middle" fill="white" font-size="14">P</text></svg>'} alt="" className="avatar avatar-sm" />
           <span className={`avatar-dot ${partnerOnline ? 'online' : 'offline'}`} />
         </div>
         <div style={{ flex: 1 }}>

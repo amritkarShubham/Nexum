@@ -11,6 +11,9 @@ from database import (
     check_usage_limit, increment_daily_usage,
 )
 
+# Global reference so SocketIO can emit outside of event handlers
+socketio_instance = None
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -18,6 +21,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(32).hex())
 CORS(app, resources={r"/*": {"origins": os.environ.get("CORS_ORIGIN", "http://localhost:5173")}})
 
 socketio = SocketIO(app, cors_allowed_origins=os.environ.get("CORS_ORIGIN", "*"))
+socketio_instance = socketio  # make accessible outside event handlers
 
 # ── REST API ──
 
@@ -71,6 +75,12 @@ def join_couple_route():
     couple = join_couple(data['code'], data['user_id'])
     if not couple:
         return jsonify({"error": "invalid or expired code"}), 404
+    if socketio_instance:
+        socketio_instance.emit('partner_joined', {
+            'coupleId': couple['id'],
+            'coupleCode': couple['code'],
+            'userId': data['user_id'],
+        })
     return jsonify(couple)
 
 @app.route('/api/couples/<user_id>')
@@ -138,6 +148,14 @@ def on_join(data):
         print(f"User {request.sid} joined room {room}")
         emit('room_update', {'message': f"User joined room {room}"}, to=room)
 
+@socketio.on('leave_call_room')
+def on_leave(data):
+    room = data.get('room')
+    if room:
+        leave_room(room)
+        print(f"User {request.sid} left room {room}")
+        emit('room_update', {'message': f"User left room {room}"}, to=room)
+
 # WebRTC Signaling
 @socketio.on('webrtc_offer')
 def handle_offer(data):
@@ -165,6 +183,12 @@ def handle_player_action(data):
 def handle_chat(data):
     room = data.get('room')
     emit('chat_message', data, to=room, include_self=False)
+
+# Partner joined notification
+@socketio.on('partner_joined')
+def handle_partner_joined(data):
+    room = data.get('room')
+    emit('partner_joined', data, to=room, include_self=False)
 
 # Mood
 @socketio.on('mood_update')

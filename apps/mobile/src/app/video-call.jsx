@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 import { PhoneOff, Mic, MicOff, Camera, CameraOff } from 'lucide-react-native';
+import useStore from '../store/useStore';
 
 export default function VideoCallScreen() {
+  const { partner } = useStore();
   const [muted, setMuted] = useState(false);
   const [cameraOff, setCameraOff] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -26,9 +28,9 @@ export default function VideoCallScreen() {
         <View style={styles.remoteVideo}>
           <View style={styles.remotePlaceholder}>
             <View style={styles.bigAvatar}>
-              <Text style={styles.bigAvatarText}>S</Text>
+              <Text style={styles.bigAvatarText}>{partner.name?.[0] || 'P'}</Text>
             </View>
-            <Text style={styles.partnerName}>Sarah</Text>
+            <Text style={styles.partnerName}>{partner.name}</Text>
             <Text style={styles.callDuration}>{formatTime(duration)}</Text>
           </View>
         </View>

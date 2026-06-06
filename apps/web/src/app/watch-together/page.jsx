@@ -148,7 +148,7 @@ export default function WatchTogether() {
           {reactions.map(r => <Reaction key={r.id} {...r} onDone={removeReaction} />)}
           {isPiPOpen && (
             <div style={{ position: 'absolute', bottom: 12, right: 12, width: 110, height: 80, borderRadius: 10, overflow: 'hidden', border: '2px solid var(--accent)', background: '#000' }}>
-              <img src={partner.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236c63ff"/><text x="16" y="21" text-anchor="middle" fill="white" font-size="14">P</text></svg>'} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <button onClick={() => setIsPiPOpen(false)}
                 style={{ position: 'absolute', top: 2, right: 2, width: 18, height: 18, borderRadius: '50%', background: '#0008', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <X size={10} />
@@ -262,7 +262,7 @@ export default function WatchTogether() {
       {/* Partner Status */}
       <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px' }}>
         <div className="avatar-wrapper">
-          <img src={partner.avatar} alt="" className="avatar avatar-sm" />
+          <img src={partner.avatar || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="16" fill="%236c63ff"/><text x="16" y="21" text-anchor="middle" fill="white" font-size="14">P</text></svg>'} alt="" className="avatar avatar-sm" />
           <span className="avatar-dot online" />
         </div>
         <div style={{ flex: 1 }}>

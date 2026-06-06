@@ -58,8 +58,8 @@ export const PLANS = {
 
 const useStore = create((set, get) => ({
   // User / partner
-  user: { name: 'Alex', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80' },
-  partner: { name: 'Sarah', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80' },
+  user: { name: 'You', avatar: null },
+  partner: { name: 'Partner', avatar: null },
   partnerOnline: true,
   partnerActivity: 'Listening to music 🎵',
 
@@ -98,7 +98,7 @@ const useStore = create((set, get) => ({
 
   // Streak / stats
   streak: 47,
-  daysSinceStart: Math.floor((Date.now() - new Date('2024-06-15').getTime()) / 86400000),
+  daysSinceStart: (() => Math.floor((Date.now() - new Date('2024-06-15').getTime()) / 86400000))(),
 
   // Actions
   setUser: (user) => set({ user }),
