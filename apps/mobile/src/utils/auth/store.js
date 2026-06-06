@@ -1,11 +1,8 @@
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 
-export const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
+export const authKey = 'nexum-auth';
 
-/**
- * This store manages the authentication state of the application.
- */
 export const useAuthStore = create((set) => ({
   isReady: false,
   auth: null,
@@ -17,11 +14,9 @@ export const useAuthStore = create((set) => ({
     }
     set({ auth });
   },
+  setReady: () => set({ isReady: true }),
 }));
 
-/**
- * This store manages the state of the authentication modal.
- */
 export const useAuthModal = create((set) => ({
   isOpen: false,
   mode: 'signup',

@@ -1,285 +1,140 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
-import { Sparkles, LayoutDashboard, Activity, CheckCircle, Clock } from 'lucide-react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { Heart, LogIn, UserPlus, Sparkles, Play, Gamepad2, MessageCircle } from 'lucide-react-native';
+import { useAuthStore } from '../utils/auth/store';
+import { router } from 'expo-router';
+import { api } from '../utils/api';
 
-export default function Index() {
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Review project proposal', time: '10:00 AM', completed: false },
-    { id: 2, title: 'Design system updates', time: '1:30 PM', completed: true },
-    { id: 3, title: 'Team standup meeting', time: '3:00 PM', completed: false },
-  ]);
+export default function LandingScreen() {
+  const [page, setPage] = useState('landing');
+  const [mode, setMode] = useState('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { setAuth, auth } = useAuthStore();
 
-  const toggleTask = (id) => {
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
+  useEffect(() => {
+    if (auth) {
+      router.replace(auth.coupleId ? '/dashboard' : '/connect');
+    }
+  }, [auth]);
+
+  const handleSubmit = async () => {
+    if (!email.trim() || (mode === 'register' && !name.trim())) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (mode === 'register') {
+        const data = await api.register(email.trim(), name.trim());
+        setAuth({ user: data.user, subscription: data.subscription });
+        router.replace('/connect');
+      } else {
+        const data = await api.getUserByEmail(email.trim());
+        setAuth({ user: data.user, subscription: data.subscription });
+        try {
+          const couple = await api.getCouple(data.user.id);
+          setAuth({ user: data.user, subscription: data.subscription, coupleId: couple.id });
+          router.replace('/dashboard');
+        } catch {
+          router.replace('/connect');
+        }
+      }
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (page === 'landing') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.landingContainer}>
+          <View style={styles.hero}>
+            <View style={styles.logoCircle}><Heart size={44} color="#fff" /></View>
+            <Text style={styles.heroTitle}>Nexum</Text>
+            <Text style={styles.heroSub}>Together, apart</Text>
+          </View>
+          <View style={styles.features}>
+            {[
+              { icon: Play, label: 'Synchronized streaming', desc: 'Watch together in sync' },
+              { icon: Gamepad2, label: 'Games for two', desc: 'Trivia, Truth or Dare & more' },
+              { icon: Heart, label: 'HD Video & Voice', desc: 'Feel close, even far' },
+              { icon: MessageCircle, label: 'Daily check-ins', desc: 'Moods, prompts & streaks' },
+            ].map((f, i) => (
+              <View key={i} style={styles.featureRow}>
+                <View style={styles.featureIcon}><f.icon size={18} color="#6c63ff" /></View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.featureLabel}>{f.label}</Text>
+                  <Text style={styles.featureDesc}>{f.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity style={styles.ctaBtn} onPress={() => setPage('auth')}>
+            <Sparkles size={18} color="#0a0a0f" />
+            <Text style={styles.ctaText}>Get Started</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.ctaSecondary} onPress={() => { setMode('login'); setPage('auth'); }}>
+            <LogIn size={16} color="#6c63ff" />
+            <Text style={styles.ctaSecondaryText}>I have an account</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        
-        {/* Header Section */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <View style={styles.iconContainer}>
-              <LayoutDashboard size={24} color="#f0f0ff" />
-            </View>
-            <View>
-              <Text style={styles.greeting}>Good morning,</Text>
-              <Text style={styles.username}>Alex</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.avatar}>
-            <Text style={styles.avatarText}>A</Text>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        <View style={styles.logoSection}>
+          <View style={styles.logoCircleMini}><Heart size={28} color="#fff" /></View>
+          <Text style={styles.title}>{mode === 'login' ? 'Welcome back' : 'Join Nexum'}</Text>
+          <Text style={styles.subtitle}>{mode === 'login' ? 'Sign in to continue' : 'Create your account'}</Text>
+        </View>
+        <View style={styles.form}>
+          {mode === 'register' && (
+            <TextInput style={styles.input} placeholder="Your name" placeholderTextColor="#5a5a7a" value={name} onChangeText={setName} autoCapitalize="words" />
+          )}
+          <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#5a5a7a" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
+          <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={loading}>
+            {loading ? <ActivityIndicator color="#0a0a0f" /> : <Text style={styles.buttonText}>{mode === 'login' ? 'Sign In' : 'Create Account'}</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setMode(mode === 'login' ? 'register' : 'login')}>
+            <Text style={styles.switchText}>{mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}</Text>
           </TouchableOpacity>
         </View>
-
-        {/* AI Insight Card */}
-        <View style={styles.insightCard}>
-          <View style={styles.insightHeader}>
-            <Sparkles size={18} color="#a78bfa" />
-            <Text style={styles.insightTitle}>Nexum AI Insight</Text>
-          </View>
-          <Text style={styles.insightText}>
-            You have a busy afternoon. Consider moving your 3:00 PM standup to tomorrow to focus on the design updates.
-          </Text>
-          <TouchableOpacity style={styles.insightAction}>
-            <Text style={styles.insightActionText}>Reschedule meeting</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats Grid */}
-        <View style={styles.statsGrid}>
-          <View style={[styles.statCard, { borderTopColor: '#6c63ff' }]}>
-            <Activity size={20} color="#6c63ff" />
-            <Text style={styles.statValue}>85%</Text>
-            <Text style={styles.statLabel}>Productivity</Text>
-          </View>
-          <View style={[styles.statCard, { borderTopColor: '#34d399' }]}>
-            <CheckCircle size={20} color="#34d399" />
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Tasks Done</Text>
-          </View>
-        </View>
-
-        {/* Task List */}
-        <View style={styles.taskListContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Tasks</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See all</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {tasks.map(task => (
-            <TouchableOpacity 
-              key={task.id} 
-              style={[styles.taskItem, task.completed && styles.taskItemCompleted]}
-              onPress={() => toggleTask(task.id)}
-            >
-              <View style={[styles.checkbox, task.completed && styles.checkboxCompleted]}>
-                {task.completed && <CheckCircle size={14} color="#0a0a0f" />}
-              </View>
-              <View style={styles.taskDetails}>
-                <Text style={[styles.taskTitle, task.completed && styles.taskTitleCompleted]}>
-                  {task.title}
-                </Text>
-                <View style={styles.taskTimeContainer}>
-                  <Clock size={12} color="#9090b0" />
-                  <Text style={styles.taskTime}>{task.time}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0a0a0f',
-  },
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 20,
-    paddingTop: 40,
-    paddingBottom: 80,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: '#6c63ff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  greeting: {
-    color: '#9090b0',
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  username: {
-    color: '#f0f0ff',
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  avatarText: {
-    color: '#f0f0ff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  insightCard: {
-    backgroundColor: 'rgba(108, 99, 255, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(108, 99, 255, 0.3)',
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 24,
-  },
-  insightHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  insightTitle: {
-    color: '#a78bfa',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  insightText: {
-    color: '#e0e0ff',
-    fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 16,
-  },
-  insightAction: {
-    backgroundColor: 'rgba(108, 99, 255, 0.2)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
-  },
-  insightActionText: {
-    color: '#a78bfa',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 32,
-  },
-  statCard: {
-    width: '48%',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderRadius: 16,
-    padding: 16,
-    borderTopWidth: 3,
-  },
-  statValue: {
-    color: '#f0f0ff',
-    fontSize: 28,
-    fontWeight: '700',
-    marginTop: 12,
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: '#9090b0',
-    fontSize: 14,
-  },
-  taskListContainer: {
-    marginTop: 8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    color: '#f0f0ff',
-    fontSize: 20,
-    fontWeight: '600',
-  },
-  seeAllText: {
-    color: '#6c63ff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  taskItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  taskItemCompleted: {
-    opacity: 0.6,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#5a5a7a',
-    marginRight: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxCompleted: {
-    backgroundColor: '#34d399',
-    borderColor: '#34d399',
-  },
-  taskDetails: {
-    flex: 1,
-  },
-  taskTitle: {
-    color: '#f0f0ff',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 6,
-  },
-  taskTitleCompleted: {
-    textDecorationLine: 'line-through',
-    color: '#9090b0',
-  },
-  taskTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  taskTime: {
-    color: '#9090b0',
-    fontSize: 13,
-    marginLeft: 6,
-  },
+  safeArea: { flex: 1, backgroundColor: '#0a0a0f' },
+  container: { flex: 1, justifyContent: 'center', padding: 24 },
+  landingContainer: { flex: 1, padding: 24, justifyContent: 'center' },
+  hero: { alignItems: 'center', marginBottom: 40 },
+  logoCircle: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#6c63ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  logoCircleMini: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#6c63ff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  heroTitle: { color: '#f0f0ff', fontSize: 40, fontWeight: '700', marginBottom: 8 },
+  heroSub: { color: '#9090b0', fontSize: 18 },
+  features: { gap: 16, marginBottom: 40 },
+  featureRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  featureIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(108,99,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  featureLabel: { color: '#f0f0ff', fontSize: 15, fontWeight: '600' },
+  featureDesc: { color: '#9090b0', fontSize: 13, marginTop: 2 },
+  ctaBtn: { backgroundColor: '#6c63ff', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  ctaText: { color: '#0a0a0f', fontSize: 16, fontWeight: '700' },
+  ctaSecondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, padding: 16, marginTop: 8 },
+  ctaSecondaryText: { color: '#6c63ff', fontSize: 14, fontWeight: '500' },
+  logoSection: { alignItems: 'center', marginBottom: 40 },
+  title: { color: '#f0f0ff', fontSize: 28, fontWeight: '700', marginBottom: 6 },
+  subtitle: { color: '#9090b0', fontSize: 15 },
+  form: { gap: 14 },
+  input: { backgroundColor: 'rgba(255,255,255,0.06)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: 16, color: '#f0f0ff', fontSize: 16 },
+  button: { backgroundColor: '#6c63ff', borderRadius: 16, padding: 16, alignItems: 'center', justifyContent: 'center', marginTop: 8 },
+  buttonText: { color: '#0a0a0f', fontSize: 16, fontWeight: '700' },
+  switchText: { color: '#6c63ff', textAlign: 'center', fontSize: 14, marginTop: 8 },
 });
