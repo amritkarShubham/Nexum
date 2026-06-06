@@ -79,7 +79,7 @@ def create_couple(user1_id):
 
 def join_couple(code, user2_id):
     if USE_SUPABASE and supabase:
-        data = supabase.table("couples").update({"user2_id": user2_id, "connected_at": datetime.utcnow().isoformat()}).eq("code", code).eq("user2_id", None).execute()
+        data = supabase.table("couples").update({"user2_id": user2_id, "connected_at": datetime.utcnow().isoformat()}).eq("code", code).is_("user2_id", "null").execute()
         return data.data[0] if data.data else None
     conn = get_db()
     cur = conn.cursor()
