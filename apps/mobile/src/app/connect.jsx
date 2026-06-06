@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Alert, ActivityIndicator, Share } from 'react-native';
 import { Heart, Link2, QrCode, ArrowLeft, Share2, Clock } from 'lucide-react-native';
 import { useAuthStore } from '../utils/auth/store';
 import { router } from 'expo-router';
@@ -24,6 +24,12 @@ export default function ConnectScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleShare = async () => {
+    try {
+      await Share.share({ message: `Join me on Nexum! My couple code: ${createdCode}` });
+    } catch (e) {}
   };
 
   const handleJoin = async () => {
@@ -64,7 +70,7 @@ export default function ConnectScreen() {
             <View style={styles.codeDisplay}>
               <Text style={styles.codeText}>{createdCode}</Text>
             </View>
-            <TouchableOpacity style={styles.shareBtn}>
+            <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
               <Share2 size={16} color="#0a0a0f" />
               <Text style={styles.shareBtnText}>Share Code</Text>
             </TouchableOpacity>
